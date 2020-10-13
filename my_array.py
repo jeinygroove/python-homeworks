@@ -95,7 +95,7 @@ class Array(object):
         Returns:
             True if all corresponding elements of two arrays are equal.
         """
-        if not isinstance(other, Array) or len(self) != len(other):
+        if not isinstance(other, Array) or self._num_of_elems != len(other):
             return False
         for elem1, elem2 in zip(self, other):
             if elem1 != elem2:
@@ -189,9 +189,9 @@ class Array(object):
         Raises:
             IndexError: if index is out of the array.
         """
-        while index < 0:
-            index += len(self)
-        if index >= len(self):
+        if index < 0:
+            index += self._num_of_elems
+        if index >= self._num_of_elems or index < 0:
             raise IndexError
         node = self._array_ends[0]
         while index != 0:
@@ -206,7 +206,7 @@ class Array(object):
         Raises:
             IndexError: if array is empty.
         """
-        if not len(self):
+        if not self._num_of_elems:
             raise IndexError
         curr_node = self._array_ends[0]
         prev_node = None
@@ -224,7 +224,7 @@ class Array(object):
         Parameters:
             elem: element
         """
-        if not len(self):
+        if not self._num_of_elems:
             return
 
         curr_node = self._array_ends[0]
