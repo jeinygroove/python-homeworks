@@ -1,6 +1,7 @@
 """This module contains implementation of the Array class."""
 
 from __future__ import annotations
+from typing import Optional, Tuple
 
 
 class Node(object):
@@ -12,7 +13,9 @@ class Node(object):
         _next: next Node
     """
 
-    def __init__(self, node_value: object):
+    __slots__ = ('_node_value', '_next')
+
+    def __init__(self, node_value) -> None:
         """
         Init Node.
 
@@ -20,9 +23,9 @@ class Node(object):
             node_value: some object that this node will be keeping
         """
         self._node_value = node_value
-        self._next = None
+        self._next: Optional[Node] = None
 
-    def __eq__(self, other):
+    def __eq__(self, other: Optional[object]) -> bool:
         """
         Check if two nodes are equal.
 
@@ -36,7 +39,7 @@ class Node(object):
             return False
         return self._node_value == other.get_value()
 
-    def set_next(self, next_node: Node):
+    def set_next(self, next_node: Optional[Node]):
         """
         Set next node.
 
@@ -45,7 +48,7 @@ class Node(object):
         """
         self._next = next_node
 
-    def get_next(self) -> Node:
+    def get_next(self) -> Optional[Node]:
         """
         Get next node.
 
@@ -73,7 +76,9 @@ class Array(object):
         _array_ends: the first and the last element of the array
     """
 
-    def __init__(self, *args: [object]):
+    __slots__ = ('_num_of_elems', '_array_ends')
+
+    def __init__(self, *args) -> None:
         """
         Init array with given elements.
 
@@ -81,11 +86,11 @@ class Array(object):
             args: array elements
         """
         self._num_of_elems = 0
-        self._array_ends = (None, None)
+        self._array_ends: Tuple[Optional[Node], Optional[Node]] = (None, None)
         for array_elem in args:
             self.append(array_elem)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Optional[object]) -> bool:
         """
         Check if arrays are equal.
 
@@ -117,6 +122,9 @@ class Array(object):
 
         Parameters:
             elem: value of the new element
+
+        Raises:
+            TypeError: if state of the object is illegal
         """
         self._num_of_elems += 1
         head, tail = self._array_ends
@@ -124,7 +132,9 @@ class Array(object):
             head = Node(elem)
             self._array_ends = (head, head)
             return
-        new_tail = Node(elem)
+        new_tail: Node = Node(elem)
+        if tail is None:
+            raise TypeError('Unexpected error: tail is None when head is not')
         tail.set_next(new_tail)
         self._array_ends = (head, new_tail)
 
@@ -176,7 +186,7 @@ class Array(object):
             index += 1
         return -1
 
-    def __getitem__(self, index: int) -> object:
+    def __getitem__(self, index: int):
         """
         Access element of the array by index.
 
@@ -188,15 +198,18 @@ class Array(object):
 
         Raises:
             IndexError: if index is out of the array.
+            TypeError: if state of the object is illegal
         """
         if index < 0:
             index += self._num_of_elems
         if index >= self._num_of_elems or index < 0:
             raise IndexError
         node = self._array_ends[0]
-        while index != 0:
+        while index != 0 and node is not None:
             node = node.get_next()
             index -= 1
+        if node is None:
+            raise TypeError('Node that must exist is None.')
         return node.get_value()
 
     def pop(self):
@@ -205,14 +218,22 @@ class Array(object):
 
         Raises:
             IndexError: if array is empty.
+            TypeError: if state of the object is illegal.
         """
         if not self._num_of_elems:
             raise IndexError
         curr_node = self._array_ends[0]
         prev_node = None
-        while curr_node.get_next() is not None:
+        if curr_node is None:
+            raise TypeError(
+                'number of elements is positive' +
+                " but front element doesn't exist.",
+            )
+        next_node = curr_node.get_next()
+        while next_node is not None:
             prev_node = curr_node
-            curr_node = curr_node.get_next()
+            curr_node = next_node
+            next_node = curr_node.get_next()
         if prev_node is not None:
             prev_node.set_next(None)
         self._num_of_elems -= 1
@@ -282,7 +303,15 @@ class Array(object):
 
 
 class ArrayIterator(object):
-    """Represents iterator for the array."""
+    """
+    Represents iterator for the array.
+
+    Attributes:
+        array_ref: Array object to which it refers
+        curr_index: current index
+    """
+
+    __slots__ = ('array_ref', 'curr_index')
 
     def __init__(self, array: Array):
         """

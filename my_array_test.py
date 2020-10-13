@@ -3,6 +3,7 @@
 from hypothesis import example, given
 from hypothesis import strategies as st
 from my_array import Array
+from typing import List
 from unittest import TestCase
 
 
@@ -28,7 +29,7 @@ class TestArray(TestCase):
     @given(lst=st.lists(st.text()), new_elems=st.lists(st.text()))
     @example(lst=[], new_elems=['Uno'])
     @example(lst=[], new_elems=['Uno', 'Dos', 'Tres'])
-    def test_add_many_to_array(self, lst, new_elems):
+    def test_add_many_to_array(self, lst: List[int], new_elems: List[int]):
         """
         Test that we can append elements to the array.
 
@@ -57,7 +58,7 @@ class TestArray(TestCase):
             )
 
     @given(lst=st.lists(st.integers()), new_elem=st.integers())
-    def test_copy_array(self, lst, new_elem):
+    def test_copy_array(self, lst: List[int], new_elem: int):
         """
         Test that we can create a copy of the array.
 
@@ -83,7 +84,12 @@ class TestArray(TestCase):
     @example(elems1=[], elems2=[1, 2, 3], new_elem=4)
     @example(elems1=[1, 2, 3], elems2=[], new_elem=4)
     @example(elems1=[], elems2=[], new_elem=4)
-    def test_add_arrays(self, elems1, elems2, new_elem):
+    def test_add_arrays(
+        self,
+        elems1: List[int],
+        elems2: List[int],
+        new_elem: int,
+    ):
         """
         Test that we can add two arrays.
 
@@ -114,7 +120,7 @@ class TestArray(TestCase):
     @given(lst=st.lists(st.integers()), search_elem=st.integers())
     @example(lst=[1, 2, 3, 2], search_elem=2)
     @example(lst=[1, 2, 3], search_elem=4)
-    def test_find_index_if_exists(self, lst, search_elem):
+    def test_find_index_if_exists(self, lst: List[int], search_elem: int):
         """
         Test that index() finds the first occurrence of the element.
 
@@ -136,7 +142,7 @@ class TestArray(TestCase):
         lst=st.lists(elements=st.integers()),
         search_index=st.integers(),
     )
-    def test_get_elem_by_index(self, lst, search_index):
+    def test_get_elem_by_index(self, lst: List[int], search_index: int):
         """
 
         Test that we can get an element from the array by index.
@@ -158,14 +164,14 @@ class TestArray(TestCase):
             self.assertEqual(expected_elem, found_elem)
 
     @given(lst_of_lsts=st.lists(st.lists(st.integers())))
-    def test_array_of_arrays(self, lst_of_lsts):
+    def test_array_of_arrays(self, lst_of_lsts: List[List[int]]):
         """
         Test that we can create array of arrays.
 
         Parameters:
             lst_of_lsts: list of lists we want to init with Array
         """
-        array_with_arrays = Array(*[Array(*lst) for lst in lst_of_lsts])
+        array_with_arrays: Array = Array(*[Array(*lst) for lst in lst_of_lsts])
         self.assertEqual(len(lst_of_lsts), len(array_with_arrays))
         for lst_index, lst in enumerate(lst_of_lsts):
             array_elem: Array = array_with_arrays[lst_index]
