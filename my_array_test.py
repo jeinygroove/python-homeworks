@@ -1,184 +1,174 @@
 """This file contains tests for Array class."""
 
-from unittest import TestCase
-
+from hypothesis import example, given
+from hypothesis import strategies as st
 from my_array import Array
+from unittest import TestCase
 
 
 class TestArray(TestCase):
     """This class tests that Array class was implemented correctly."""
 
-    def test_empty_array_creation(self):
-        """Test that empty array can be created and it has 0 size."""
-        empty_array = Array()
+    @given(lst=st.lists(st.integers()))
+    @example(lst=[])
+    @example(lst=[1])
+    @example(lst=[1, 2, 3])
+    def test_array_creation(self, lst):
+        """Test that array can be created and has correct size and elements.
 
-        self.assertEqual(0, len(empty_array))
-
-    def test_one_elem_array_creation(self):
+        Parameters:
+            lst: list of elements we want to init with Array
         """
-        Test that one element array can be created.
+        my_array = Array(*lst)
 
-        It has size 1 and correct element.
+        self.assertEqual(len(lst), len(lst))
+        for elem1, elem2 in zip(lst, my_array):
+            self.assertEqual(elem1, elem2)
+
+    @given(lst=st.lists(st.text()), new_elems=st.lists(st.text()))
+    @example(lst=[], new_elems=['Uno'])
+    @example(lst=[], new_elems=['Uno', 'Dos', 'Tres'])
+    def test_add_many_to_array(self, lst, new_elems):
         """
-        one_elem_array = Array(1)
-
-        self.assertEqual(1, len(one_elem_array))
-        self.assertEqual(1, one_elem_array[0])
-
-    def test_many_elem_array_creation(self):
-        """
-        Test that array with N elements can be created.
-
-        It has size N and its elements are in the right order.
-        """
-        many_elem_array = Array(1, 2, 3)
-
-        self.assertEqual(3, len(many_elem_array))
-        self.assertEqual(1, many_elem_array[0])
-        self.assertEqual(2, many_elem_array[1])
-        self.assertEqual(3, many_elem_array[2])
-
-    def test_append_to_empty_array(self):
-        """Test that we can append element to empty array."""
-        array = Array()
-        new_elem = 'Jerry'
-
-        array.append(new_elem)
-
-        self.assertEqual(1, len(array))
-        self.assertEqual(new_elem, array[0])
-
-    def test_add_many_to_array(self):
-        """
-        Test that we can append many elements to the array.
+        Test that we can append elements to the array.
 
         They must be appended in the right order.
+
+        Parameters:
+            lst: list of elements we want to init with Array
+            new_elems: elements we want to append
         """
-        array = Array()
-        new_elems = 'Uno', 'Dos', 'Tres'
+        array = Array(*lst)
+        array_length = len(lst)
 
         for elem in new_elems:
             array.append(elem)
 
-        self.assertEqual(len(new_elems), len(array))
-        for index, arr_elem in enumerate(array):
-            self.assertEqual(new_elems[index], arr_elem)
+        self.assertEqual(
+            array_length + len(new_elems),
+            len(array),
+        )
+        for index, array_elem in enumerate(array):
+            self.assertEqual(
+                lst[index]
+                if index < array_length
+                else new_elems[index - array_length],
+                array_elem,
+            )
 
-    def test_copy_array(self):
+    @given(lst=st.lists(st.integers()), new_elem=st.integers())
+    def test_copy_array(self, lst, new_elem):
         """
         Test that we can create a copy of the array.
 
         Changing the copy must not affect the original array.
+
+        Parameters:
+            lst: list of elements that we want to init with Array
+            new_elem: element to append and check original array
         """
-        original_array = Array(1, 2, 3)
+        original_array = Array(*lst)
         copied_array = original_array.copy()
-        copied_array.append(4)
+        copied_array.append(new_elem)
+        num_of_elems = len(lst)
 
-        self.assertEqual(3, len(original_array))
-        self.assertEqual(4, len(copied_array))
+        self.assertEqual(num_of_elems, len(original_array))
+        self.assertEqual(num_of_elems + 1, len(copied_array))
 
-    def test_add_arrays(self):
+    @given(
+        elems1=st.lists(st.integers()),
+        elems2=st.lists(st.integers()),
+        new_elem=st.integers(),
+    )
+    @example(elems1=[], elems2=[1, 2, 3], new_elem=4)
+    @example(elems1=[1, 2, 3], elems2=[], new_elem=4)
+    @example(elems1=[], elems2=[], new_elem=4)
+    def test_add_arrays(self, elems1, elems2, new_elem):
         """
         Test that we can add two arrays.
 
         Changing the result array must not affect the original arrays.
+
+        Parameters:
+            elems1: list of elements for the first Array
+            elems2: list of elements for the second Array
+            new_elem: element to append and check 1'st and 2'nd array
         """
-        fst_array = Array(1, 2, 3)
-        snd_array = Array(4, 5)
+        fst_array = Array(*elems1)
+        snd_array = Array(*elems2)
+        fst_array_length = len(elems1)
+        snd_array_length = len(elems2)
 
         add_array = fst_array + snd_array
-        self.assertEqual(5, len(add_array))
+        add_array_length = fst_array_length + snd_array_length
+        self.assertEqual(
+            add_array_length,
+            len(add_array),
+        )
 
-        add_array.append(7)
-        self.assertEqual(6, len(add_array))
-        # Check that appending to the new array
-        # haven't changed previous ones
-        self.assertEqual(3, len(fst_array))
-        self.assertEqual(2, len(snd_array))
+        add_array.append(new_elem)
+        self.assertEqual(add_array_length + 1, len(add_array))
+        self.assertEqual(fst_array_length, len(fst_array))
+        self.assertEqual(snd_array_length, len(snd_array))
 
-    def test_add_array_to_empty(self):
+    @given(lst=st.lists(st.integers()), search_elem=st.integers())
+    @example(lst=[1, 2, 3, 2], search_elem=2)
+    @example(lst=[1, 2, 3], search_elem=4)
+    def test_find_index_if_exists(self, lst, search_elem):
         """
-        Test that we can add array to an empty one.
+        Test that index() finds the first occurrence of the element.
 
-        Changing the result array must not affect the original arrays.
+        Parameters:
+            lst: list of elements that we want to init with Array
+            search_elem: element that we want to find
         """
-        fst_array = Array()
-        snd_array = Array(1, 2)
-
-        add_array = fst_array + snd_array
-        self.assertEqual(2, len(add_array))
-
-        add_array.append(3)
-        self.assertEqual(3, len(add_array))
-        # Check that appending to the new array
-        # haven't changed previous ones
-        self.assertEqual(0, len(fst_array))
-        self.assertEqual(2, len(snd_array))
-
-    def test_add_empty_array(self):
-        """
-        Test that we can add empty array to another array.
-
-        Changing the result array must not affect the original arrays.
-        """
-        fst_array = Array(1, 2)
-        snd_array = Array()
-
-        add_array = fst_array + snd_array
-        self.assertEqual(2, len(add_array))
-
-        add_array.append(3)
-        self.assertEqual(3, len(add_array))
-        # Check that appending to the new array
-        # haven't changed previous ones
-        self.assertEqual(2, len(fst_array))
-        self.assertEqual(0, len(snd_array))
-
-    def test_find_index_if_exists(self):
-        """Test that index() finds the first occurrence of the element."""
-        array = Array(1, 2, 3, 2)
-        found_index = array.index(2)
-        expected_index = 1
-
-        self.assertEqual(expected_index, found_index)
-
-    def test_find_index_if_not_exists(self):
-        """Test that index returns -1 if array doesn't contain the element."""
-        array = Array(1, 2, 3)
-        found_index = array.index(4)
+        array = Array(*lst)
+        found_index = array.index(search_elem)
         expected_index = -1
+        for index, elem in enumerate(lst):
+            if elem == search_elem:
+                expected_index = index
+                break
 
         self.assertEqual(expected_index, found_index)
 
-    def test_get_elem_by_index(self):
-        """Test that we can get an element from the array by index."""
-        array = Array(1, 2, 3)
-        found_elem = array[2]
-        expected_elem = 3
-
-        self.assertEqual(expected_elem, found_elem)
-
-    def test_get_elem_by_negative_index(self):
-        """Test that we can get an element from the array by negative index."""
-        array = Array(1, 2, 3)
-        found_elem = array[-2]
-        expected_elem = 2
-
-        self.assertEqual(expected_elem, found_elem)
-
-    def test_get_elem_by_incorrect_index(self):
+    @given(
+        lst=st.lists(elements=st.integers()),
+        search_index=st.integers(),
+    )
+    def test_get_elem_by_index(self, lst, search_index):
         """
-        Test that there's an error when index that is out of bounds.
+
+        Test that we can get an element from the array by index.
+
+        Parameters:
+            lst: list of elements that we want to init with Array
+            search_index: index of the element that we want to find
 
         Returns:
-            element found by index (exists to avoid 'no-effect' warning)
+            object: return to avoid no-effect warning (expecting error)
         """
-        with self.assertRaises(IndexError):
-            return Array(1, 2, 3)[4]
+        array = Array(*lst)
+        if search_index >= len(lst) or search_index < -len(lst):
+            with self.assertRaises(IndexError):
+                return array[search_index]
+        else:
+            found_elem = array[search_index]
+            expected_elem = lst[search_index]
+            self.assertEqual(expected_elem, found_elem)
 
-    def test_array_of_arrays(self):
-        """Test that we can create array of arrays."""
-        array_with_arrays = Array(Array(1), Array(2, 3))
+    @given(lst_of_lsts=st.lists(st.lists(st.integers())))
+    def test_array_of_arrays(self, lst_of_lsts):
+        """
+        Test that we can create array of arrays.
 
-        self.assertEqual(2, len(array_with_arrays))
-        self.assertEqual(0, array_with_arrays.index(Array(1)))
+        Parameters:
+            lst_of_lsts: list of lists we want to init with Array
+        """
+        array_with_arrays = Array(*[Array(*lst) for lst in lst_of_lsts])
+        self.assertEqual(len(lst_of_lsts), len(array_with_arrays))
+        for lst_index, lst in enumerate(lst_of_lsts):
+            array_elem: Array = array_with_arrays[lst_index]
+            self.assertEqual(len(lst), len(array_elem))
+            for elem_index, elem in enumerate(lst):
+                self.assertEqual(elem, array_elem[elem_index])
